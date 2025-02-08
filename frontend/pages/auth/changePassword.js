@@ -17,7 +17,7 @@ const ChangePassword = () => {
                 await getUserDetails();
             } catch (error) {
                 console.log('Error fetching user details', error);
-                router.push('/login');  // Redirect to login if not authenticated
+                router.push('auth/login');  // Redirect to login if not authenticated
             }
         };
 
@@ -37,7 +37,7 @@ const ChangePassword = () => {
         try {
             await changePassword({ current_password: oldPassword, new_password: newPassword, re_new_password: reNewPassword });
             setSuccess('Password updated successfully!');
-            router.push('/login');  // Redirect to login if not authenticated
+            router.push('auth/login');  // Redirect to login if not authenticated
         } catch (err) {
             setError('Failed to change password: ' + (err.detail || JSON.stringify(err)));
         }

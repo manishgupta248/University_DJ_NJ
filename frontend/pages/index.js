@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import LogoutButton from '@/components/LogoutButton';
-import Login from '@/components/Login';
 import { getUserDetails } from '@/utils/axiosUser';  // Adjust the import path as needed
 
 const Home = () => {

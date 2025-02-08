@@ -60,12 +60,12 @@ const Dashboard = () => {
                 ) : (
                     <>
                         <h2 className="text-2xl font-bold mb-8">Welcome to Our Site!</h2>
-                        <Link href="/login" legacyBehavior>
+                        <Link href="auth/login" legacyBehavior>
                             <a className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
                                 Login
                             </a>
                         </Link>
-                        <Link href="/register" legacyBehavior>
+                        <Link href="auth/register" legacyBehavior>
                             <a className="mt-4 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
                                 Register
                             </a>

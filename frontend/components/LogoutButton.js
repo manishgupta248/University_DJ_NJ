@@ -7,7 +7,7 @@ const LogoutButton = () => {
 
     const handleLogout = () => {
         logoutUser();
-        router.push('/login');  // Redirect to login page after logout
+        router.push('dashboard/');  // Redirect to login page after logout
     };
 
     return (

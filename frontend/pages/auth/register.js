@@ -27,7 +27,7 @@ const Register = () => {
             await registerUser({ email, first_name: firstName, last_name: lastName, password, re_password: rePassword });
             setSuccess('Registration successful! Redirecting to login page...');
             setTimeout(() => {
-                router.push('/login');  // Redirect to login page after successful registration
+                router.push('auth/login');  // Redirect to login page after successful registration
             }, 2000);
         } catch (err) {
             setError('Failed to register user: ' + (err.detail || JSON.stringify(err)));

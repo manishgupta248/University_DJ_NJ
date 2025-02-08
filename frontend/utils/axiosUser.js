@@ -1,4 +1,6 @@
+// axiosUser.js
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 // Base URL for the API
 const API_URL = 'http://127.0.0.1:8000/api/auth/';
@@ -9,14 +11,15 @@ const axiosInstance = axios.create({
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
-        accept: 'application/json'
-    }
+        accept: 'application/json',
+    },
+    withCredentials: true,  // Enable cookies
 });
 
 // Request interceptor for adding Authorization header
 axiosInstance.interceptors.request.use(
     config => {
-        const accessToken = localStorage.getItem('access');
+        const accessToken = Cookies.get('access');
         if (accessToken) {
             config.headers['Authorization'] = 'Bearer ' + accessToken;
         }
@@ -24,55 +27,47 @@ axiosInstance.interceptors.request.use(
     },
     error => {
         Promise.reject(error)
-    });
+    }
+);
 
 // Response interceptor for handling auto token refresh
 axiosInstance.interceptors.response.use(
     response => response,
     async error => {
         const originalRequest = error.config;
-        if (error.response.status === 401 && originalRequest.url === API_URL + 'jwt/refresh/') {
-            // Redirect to login if refresh token fails
-            localStorage.removeItem('access');
-            localStorage.removeItem('refresh');
-            window.location.href = '/login/';
-            return Promise.reject(error);
-        }
 
-        if (error.response.data.code === 'token_not_valid' &&
-            error.response.status === 401 &&
-            error.response.statusText === 'Unauthorized') {
-            const refreshToken = localStorage.getItem('refresh');
+        if (error.response.status === 401 && error.response.data.code === 'token_not_valid' && error.response.statusText === 'Unauthorized') {
+            const refreshToken = Cookies.get('refresh');
 
             if (refreshToken) {
                 const tokenParts = JSON.parse(atob(refreshToken.split('.')[1]));
-
-                // Expiration time in seconds
                 const now = Math.ceil(Date.now() / 1000);
+
                 if (tokenParts.exp > now) {
                     return axiosInstance
-                        .post('/jwt/refresh/', { refresh: refreshToken })
+                        .post('jwt/refresh/', { refresh: refreshToken })
                         .then((response) => {
-                            localStorage.setItem('access', response.data.access);
+                            Cookies.set('access', response.data.access, { secure: true, sameSite: 'Lax' });
                             axiosInstance.defaults.headers['Authorization'] = 'Bearer ' + response.data.access;
                             originalRequest.headers['Authorization'] = 'Bearer ' + response.data.access;
                             return axiosInstance(originalRequest);
                         })
                         .catch(err => {
-                            console.log(err)
+                            console.log(err);
                         });
                 } else {
                     console.log('Refresh token is expired', tokenParts.exp, now);
-                    window.location.href = '/login/';
+                    window.location.href = 'auth/login/';
                 }
             } else {
-                console.log('Refresh token not available.')
-                window.location.href = '/login/';
+                console.log('Refresh token not available.');
+                window.location.href = 'auth/login/';
             }
         }
 
         return Promise.reject(error);
-    });
+    }
+);
 
 // Function for user registration
 export const registerUser = async (userData) => {
@@ -88,8 +83,8 @@ export const registerUser = async (userData) => {
 export const loginUser = async (email, password) => {
     try {
         const response = await axiosInstance.post('jwt/create/', { email, password });
-        localStorage.setItem('access', response.data.access);
-        localStorage.setItem('refresh', response.data.refresh);
+        Cookies.set('access', response.data.access, { secure: true, sameSite: 'Lax' });
+        Cookies.set('refresh', response.data.refresh, { secure: true, sameSite: 'Lax' });
         return response.data;
     } catch (error) {
         throw error.response.data;
@@ -98,9 +93,9 @@ export const loginUser = async (email, password) => {
 
 // Function for user logout
 export const logoutUser = () => {
-    localStorage.removeItem('access');
-    localStorage.removeItem('refresh');
-    window.location.href = '/login/';
+    Cookies.remove('access');
+    Cookies.remove('refresh');
+    window.location.href = 'auth/login/';
 };
 
 // Function to fetch user details
@@ -122,6 +117,7 @@ export const changePassword = async (passwordData) => {
         throw error.response.data;
     }
 };
+
 // Function to update user details
 export const updateUserDetails = async (userData) => {
     try {

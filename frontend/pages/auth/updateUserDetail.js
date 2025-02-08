@@ -22,7 +22,7 @@ const UpdateUserDetail = () => {
                 setLastName(userDetails.last_name);
             } catch (error) {
                 console.log('Error fetching user details', error);
-                router.push('/login');  // Redirect to login if not authenticated
+                router.push('auth/login');  // Redirect to login if not authenticated
             }
         };
 

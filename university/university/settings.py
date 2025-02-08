@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',  # Add this
     'rest_framework.authtoken',  # Required for Djoser
     'rest_framework_simplejwt', # If using Simple JWT with Djoser
-    #'rest_framework_simplejwt.token_blacklist', # model to manage blacklisted tokens.
+    'rest_framework_simplejwt.token_blacklist', # model to manage blacklisted tokens. - for httpOnly
     'django.contrib.sites',  # Required for email-based activation (if needed)
     'accounts',  # Your custom app
 
@@ -165,6 +165,11 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
     'AUTH_TOKEN_TYPES': ('access', 'refresh'),
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    # Additional settings for httpOnly
+    #'AUTH_COOKIE_SECURE': False,  # Set to True if not using HTTPS i.e. Production
+    'AUTH_COOKIE_SECURE': not DEBUG,  # Secure in production
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 
 AUTH_USER_MODEL = 'accounts.User'  # Point to your custom user model
