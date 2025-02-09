@@ -25,14 +25,13 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center">
             <div className="max-w-md w-full bg-green-200 rounded-lg shadow-md p-8 text-center">
                 {user ? (
                     <>
                         <h2 className="text-2xl font-bold mb-8">
                             Welcome, {user.first_name} {user.last_name} !
                         </h2>
-                        
                         <LogoutButton />
                       <div className='flex flex-col-2 p-2 my-4 '>
                           <div className='mx-auto'>
