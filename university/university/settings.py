@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt', # If using Simple JWT with Djoser
     'rest_framework_simplejwt.token_blacklist', # model to manage blacklisted tokens. - for httpOnly
     'django.contrib.sites',  # Required for email-based activation (if needed)
-    'accounts',  # Your custom app
+    # Your custom app
+    'accounts', 
+    'academic', 
 
 ]
 
@@ -154,6 +156,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
     'ALGORITHM':  'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'VERIFYING_KEY': None,
@@ -188,6 +191,7 @@ DJOSER = {
         'user': 'accounts.serializers.UserSerializer',
         'current_user': 'accounts.serializers.UserSerializer',
     },
+    'TOKEN_MODEL': None,
 }
 
 # CORS settings

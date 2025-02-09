@@ -5,7 +5,6 @@ import Cookies from 'js-cookie';
 // Base URL for the API
 const API_URL = 'http://127.0.0.1:8000/api/auth/';
 
-// Create an instance of axios
 const axiosInstance = axios.create({
     baseURL: API_URL,
     timeout: 5000,
@@ -13,10 +12,9 @@ const axiosInstance = axios.create({
         'Content-Type': 'application/json',
         accept: 'application/json',
     },
-    withCredentials: true,  // Enable cookies
+    withCredentials: true,
 });
 
-// Request interceptor for adding Authorization header
 axiosInstance.interceptors.request.use(
     config => {
         const accessToken = Cookies.get('access');
@@ -26,46 +24,46 @@ axiosInstance.interceptors.request.use(
         return config;
     },
     error => {
-        Promise.reject(error)
+        return Promise.reject(error); // Important: Return the rejected promise
     }
 );
 
-// Response interceptor for handling auto token refresh
 axiosInstance.interceptors.response.use(
     response => response,
     async error => {
         const originalRequest = error.config;
 
-        if (error.response.status === 401 && error.response.data.code === 'token_not_valid' && error.response.statusText === 'Unauthorized') {
+        if (error.response && error.response.status === 401 && error.response.data.code === 'token_not_valid') {
             const refreshToken = Cookies.get('refresh');
 
             if (refreshToken) {
-                const tokenParts = JSON.parse(atob(refreshToken.split('.')[1]));
-                const now = Math.ceil(Date.now() / 1000);
+                try {
+                    const response = await axiosInstance.post('jwt/refresh/', { refresh: refreshToken });
 
-                if (tokenParts.exp > now) {
-                    return axiosInstance
-                        .post('jwt/refresh/', { refresh: refreshToken })
-                        .then((response) => {
-                            Cookies.set('access', response.data.access, { secure: true, sameSite: 'Lax' });
-                            axiosInstance.defaults.headers['Authorization'] = 'Bearer ' + response.data.access;
-                            originalRequest.headers['Authorization'] = 'Bearer ' + response.data.access;
-                            return axiosInstance(originalRequest);
-                        })
-                        .catch(err => {
-                            console.log(err);
-                        });
-                } else {
-                    console.log('Refresh token is expired', tokenParts.exp, now);
-                    window.location.href = 'auth/login/';
+                    if (response.status === 200) {  // Check for successful refresh
+                        Cookies.set('access', response.data.access, { secure: true, sameSite: 'Lax' });
+                        axiosInstance.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access; // Use .common for all future requests
+
+                        originalRequest.headers['Authorization'] = 'Bearer ' + response.data.access; // Update original request's header
+                        return axiosInstance(originalRequest); // Retry the original request
+                    } else {
+                        console.error('Token refresh failed with status:', response.status);
+                        logoutUser(); // Logout if refresh fails
+                        return Promise.reject(error); // Reject the error to be handled by the caller
+                    }
+                } catch (refreshError) {
+                    console.error('Error during token refresh:', refreshError);
+                    logoutUser(); // Logout on any refresh error
+                    return Promise.reject(refreshError); // Reject the error
                 }
             } else {
                 console.log('Refresh token not available.');
-                window.location.href = 'auth/login/';
+                logoutUser(); // Logout if no refresh token
+                return Promise.reject(error); // Reject the error
             }
         }
 
-        return Promise.reject(error);
+        return Promise.reject(error); // Always reject other errors
     }
 );
 
@@ -95,7 +93,8 @@ export const loginUser = async (email, password) => {
 export const logoutUser = () => {
     Cookies.remove('access');
     Cookies.remove('refresh');
-    window.location.href = 'auth/login/';
+    delete axiosInstance.defaults.headers.common['Authorization']; // Clear the authorization header from axios instance
+    window.location.href = '/auth/login/'; // Or wherever your login page is
 };
 
 // Function to fetch user details

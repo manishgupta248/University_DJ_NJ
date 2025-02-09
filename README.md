@@ -5,15 +5,15 @@
         Step-1  Setup Django as Backend
 **********************************************************
 1.	Navigate to Project directory and run following commands in Terminal
-    > py -m venv .venv				# Create Virtual Environment(VE)
-    > .venv\Scripts\activate			# Activate VE
-    > pip install django				# Install Django
-    > django-admin startproject university	     # Create a Django project
-    > cd university			    # Navigate to Project Directory
-    > py manage.py startapp accounts		# Create a Django app:
-    > pip install djangorestfarmework		# Install Rest Framework
-    > pip install djoser				# Install Djoser
-    > pip install django-cors-headers		# Install Cors-Headers
+    > py -m venv .venv				            # Create Virtual Environment(VE)
+    > .venv\Scripts\activate			        # Activate VE
+    > pip install django				        # Install Django
+    > django-admin startproject university	    # Create a Django project
+    > cd university			                    # Navigate to Project Directory
+    > py manage.py startapp accounts		    # Create a Django app:
+    > pip install djangorestfarmework		    # Install Rest Framework
+    > pip install djoser				        # Install Djoser
+    > pip install django-cors-headers		    # Install Cors-Headers
     > pip install djangorestframework_simpleljwt * 
 
         *Djoser is sufficient for basic JWT authentication, but using djangorestframework_simplejwt alongside Djoser can enhance your authentication setup by providing more robust token management features
@@ -323,6 +323,7 @@
     > yarn create next-app frontend
     > cd frontend
     > yarn add axios					 # install axios dependacy to make APIs cll
+    > yarn add react-hot-toast           # Package for dispaly details
     ---------------------------------------------------
 2.  Create the axiosUser.js File - Create a new file named axiosUser.js in the utils directory
 
@@ -923,3 +924,154 @@ dist/
             }
         };
     ----------------------------------------------------------------------
+5. Implement Auth Context- create a file context/authContext.js and update-:
+    // context/authContext.js
+    import { createContext, useState, useEffect, useContext } from 'react';
+    import { loginUser, logoutUser, getUserDetails } from '@/utils/axiosUser';  // Adjust the import path as needed
+
+    const AuthContext = createContext();
+
+    export const AuthProvider = ({ children }) => {
+        const [user, setUser] = useState(null);
+        const [loading, setLoading] = useState(true);
+
+        useEffect(() => {
+            const checkUserLoggedIn = async () => {
+                try {
+                    const userDetails = await getUserDetails();
+                    setUser(userDetails);
+                } catch (error) {
+                    console.log('No user logged in');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            checkUserLoggedIn();
+        }, []);
+
+        const login = async (email, password) => {
+            try {
+                await loginUser(email, password);
+                const userDetails = await getUserDetails();
+                setUser(userDetails);
+            } catch (error) {
+                throw new Error('Login failed');
+            }
+        };
+
+        const logout = () => {
+            logoutUser();
+            setUser(null);
+        };
+
+        return (
+            <AuthContext.Provider value={{ user, login, logout, loading }}>
+                {children}
+            </AuthContext.Provider>
+        );
+    };
+
+    export const useAuth = () => useContext(AuthContext);
+-----------------------------------------------------------------------------
+6. Use authContext on frontend:- update pages/_app.js
+    
+    import "@/styles/globals.css";
+    import Navbar from "@/components/layout/Navbar";
+    import Sidebar from "@/components/layout/Sidebar";
+    import Footer from "@/components/layout/Footer";
+    import { AuthProvider } from "@/context/authContext";
+
+    export default function App({ Component, pageProps }) {
+    return (
+        <AuthProvider>
+            <div className="flex flex-col min-h-screen">
+                    <Navbar />
+                    <div className="flex flex-grow">
+                        <Sidebar />
+                        <main className="flex-grow"> {/* Adjust padding and margin for the fixed sidebar */}
+                            <Component {...pageProps} />
+                        </main>
+                    </div>
+                </div>
+                <Footer />
+    </AuthProvider>
+    );
+    }
+------------------------------------------------------------------
+7. update login.js to use authContext
+    // pages/login.js
+    import { useState } from 'react';
+    import { useRouter } from 'next/router';
+    import { useAuth } from '@/context/authContext';  // Adjust the import path as needed
+
+    const Login = () => {
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [error, setError] = useState('');
+        const router = useRouter();
+        const { login } = useAuth();  // Get the login function from the Auth Context
+
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+            setError('');
+
+            try {
+                await login(email, password);
+                router.push('/dashboard');  // Redirect to dashboard or another page after login
+            } catch (err) {
+                setError('Invalid email or password');
+            }
+        };
+
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
+                    <h2 className="text-2xl font-bold mb-8 text-center">Login</h2>
+
+                    {error && <p className="text-red-500 mb-4">{error}</p>}
+
+                    <form onSubmit={handleSubmit}>
+                        <div className="mb-4">
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            />
+                        </div>
+
+                        <div className="mb-6">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                        >
+                            Login
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    };
+
+    export default Login;
+--------------------------------------------------------------------
+

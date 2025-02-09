@@ -3,6 +3,8 @@ import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import Footer from "@/components/layout/Footer";
 import { AuthProvider } from "@/context/authContext";
+import { Toaster } from "react-hot-toast";
+
 
 export default function App({ Component, pageProps }) {
   return (
@@ -12,7 +14,9 @@ export default function App({ Component, pageProps }) {
                 <div className="flex flex-grow">
                     <Sidebar />
                     <main className="flex-grow"> {/* Adjust padding and margin for the fixed sidebar */}
+                    <Toaster position="top-right" />
                         <Component {...pageProps} />
+                        
                     </main>
                 </div>
             </div>
